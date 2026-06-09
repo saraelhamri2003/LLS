@@ -1,0 +1,19 @@
+# Requirements for L6S (Lean Six Sigma) Chatbot Backend
+langchain
+langchain-community
+networkx
+matplotlib
+seaborn
+plotly
+pandas
+numpy
+scikit-learn
+pyvis
+python-dotenv
+tiktoken
+langgraph
+langchain-core
+langchain-openai
+langchain-anthropic
+langchain-google-genai
+streamlit

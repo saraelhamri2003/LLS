@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>LSS Assistant — Connexion</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      overflow: hidden;
+    }
+
+    /* Animated background circles */
+    body::before, body::after {
+      content: '';
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(80px);
+      opacity: 0.15;
+      animation: float 8s ease-in-out infinite;
+    }
+    body::before {
+      width: 600px; height: 600px;
+      background: #3b82f6;
+      top: -200px; left: -200px;
+    }
+    body::after {
+      width: 500px; height: 500px;
+      background: #8b5cf6;
+      bottom: -200px; right: -200px;
+      animation-delay: -4s;
+    }
+    @keyframes float {
+      0%, 100% { transform: translate(0, 0); }
+      50% { transform: translate(30px, -30px); }
+    }
+
+    .card {
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 24px;
+      padding: 48px 40px;
+      width: 100%;
+      max-width: 420px;
+      box-shadow: 0 25px 50px rgba(0,0,0,0.5);
+      position: relative;
+      z-index: 1;
+    }
+
+    .logo {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+
+    .logo-icon {
+      width: 64px; height: 64px;
+      background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+      border-radius: 16px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      margin-bottom: 16px;
+      box-shadow: 0 8px 24px rgba(59,130,246,0.4);
+    }
+
+    .logo h1 {
+      color: #fff;
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+
+    .logo p {
+      color: #94a3b8;
+      font-size: 13px;
+      margin-top: 4px;
+    }
+
+    .tab-group {
+      display: flex;
+      background: rgba(255,255,255,0.05);
+      border-radius: 10px;
+      padding: 4px;
+      margin-bottom: 28px;
+    }
+
+    .tab {
+      flex: 1;
+      padding: 8px;
+      text-align: center;
+      color: #94a3b8;
+      font-size: 13px;
+      font-weight: 500;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .tab.active {
+      background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+      color: #fff;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      color: #cbd5e1;
+      font-size: 13px;
+      font-weight: 500;
+      margin-bottom: 8px;
+    }
+
+    input {
+      width: 100%;
+      padding: 12px 16px;
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 10px;
+      color: #fff;
+      font-size: 14px;
+      outline: none;
+      transition: all 0.2s;
+    }
+
+    input:focus {
+      border-color: #3b82f6;
+      background: rgba(59,130,246,0.1);
+      box-shadow: 0 0 0 3px rgba(59,130,246,0.15);
+    }
+
+    input::placeholder { color: #475569; }
+
+    select {
+      width: 100%;
+      padding: 12px 16px;
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 10px;
+      color: #fff;
+      font-size: 14px;
+      outline: none;
+      cursor: pointer;
+    }
+
+    select option { background: #1e293b; color: #fff; }
+
+    .btn {
+      width: 100%;
+      padding: 13px;
+      background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+      border: none;
+      border-radius: 10px;
+      color: #fff;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-top: 8px;
+      letter-spacing: 0.3px;
+    }
+
+    .btn:hover { opacity: 0.9; transform: translateY(-1px); box-shadow: 0 8px 20px rgba(59,130,246,0.4); }
+    .btn:active { transform: translateY(0); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+    .error {
+      background: rgba(239,68,68,0.15);
+      border: 1px solid rgba(239,68,68,0.3);
+      border-radius: 8px;
+      color: #fca5a5;
+      font-size: 13px;
+      padding: 10px 14px;
+      margin-bottom: 16px;
+      display: none;
+    }
+
+    .success {
+      background: rgba(34,197,94,0.15);
+      border: 1px solid rgba(34,197,94,0.3);
+      border-radius: 8px;
+      color: #86efac;
+      font-size: 13px;
+      padding: 10px 14px;
+      margin-bottom: 16px;
+      display: none;
+    }
+
+    .role-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+      margin-left: 6px;
+    }
+    .role-admin { background: rgba(239,68,68,0.2); color: #fca5a5; }
+    .role-user { background: rgba(59,130,246,0.2); color: #93c5fd; }
+
+    .divider {
+      text-align: center;
+      color: #475569;
+      font-size: 12px;
+      margin: 20px 0;
+      position: relative;
+    }
+    .divider::before, .divider::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      width: 40%;
+      height: 1px;
+      background: rgba(255,255,255,0.08);
+    }
+    .divider::before { left: 0; }
+    .divider::after { right: 0; }
+
+    /* Register form hidden by default */
+    #registerForm { display: none; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo">
+      <div class="logo-icon">🧠</div>
+      <h1>LSS Assistant</h1>
+      <p>Lean Six Sigma Intelligence Platform</p>
+    </div>
+
+    <div class="tab-group">
+      <div class="tab active" onclick="switchTab('login')">Connexion</div>
+      <div class="tab" onclick="switchTab('register')" id="registerTab" style="display:none">Créer un compte</div>
+    </div>
+
+    <!-- Login Form -->
+    <div id="loginForm">
+      <div class="error" id="loginError"></div>
+      <div class="form-group">
+        <label>Nom d'utilisateur</label>
+        <input type="text" id="loginUsername" placeholder="Entrez votre nom d'utilisateur" autocomplete="username"/>
+      </div>
+      <div class="form-group">
+        <label>Mot de passe</label>
+        <input type="password" id="loginPassword" placeholder="Entrez votre mot de passe" autocomplete="current-password"/>
+      </div>
+      <button class="btn" onclick="login()" id="loginBtn">Se connecter</button>
+    </div>
+
+    <!-- Register Form (admin only) -->
+    <div id="registerForm">
+      <div class="error" id="registerError"></div>
+      <div class="success" id="registerSuccess"></div>
+      <div class="form-group">
+        <label>Nom d'utilisateur</label>
+        <input type="text" id="regUsername" placeholder="Nom d'utilisateur"/>
+      </div>
+      <div class="form-group">
+        <label>Mot de passe</label>
+        <input type="password" id="regPassword" placeholder="Mot de passe"/>
+      </div>
+      <div class="form-group">
+        <label>Rôle</label>
+        <select id="regRole">
+          <option value="utilisateur">Utilisateur</option>
+          <option value="admin">Admin</option>
+        </select>
+      </div>
+      <button class="btn" onclick="register()" id="registerBtn">Créer le compte</button>
+    </div>
+  </div>
+
+  <script>
+    const API ='http://localhost:5001';
+
+    // Check if already logged in
+    const token = localStorage.getItem('lss_token');
+    const user = JSON.parse(localStorage.getItem('lss_user') || 'null');
+    if (token && user) {
+      if (user.role === 'admin') {
+        document.getElementById('registerTab').style.display = 'block';
+      }
+    }
+
+    function switchTab(tab) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      event.target.classList.add('active');
+      document.getElementById('loginForm').style.display = tab === 'login' ? 'block' : 'none';
+      document.getElementById('registerForm').style.display = tab === 'register' ? 'block' : 'none';
+    }
+
+    async function login() {
+      const username = document.getElementById('loginUsername').value.trim();
+      const password = document.getElementById('loginPassword').value;
+      const btn = document.getElementById('loginBtn');
+      const errorEl = document.getElementById('loginError');
+
+      if (!username || !password) {
+        showError(errorEl, 'Veuillez remplir tous les champs');
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = 'Connexion en cours...';
+      errorEl.style.display = 'none';
+
+      try {
+        const res = await fetch(`${API}/api/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          showError(errorEl, data.error || 'Identifiants incorrects');
+          return;
+        }
+
+        localStorage.setItem('lss_token', data.token);
+        localStorage.setItem('lss_user', JSON.stringify(data.user));
+
+        // Redirect based on role
+        if (data.user.role === 'admin') {
+          window.location.href = '/admin.html';
+        } else {
+          window.location.href = '/';
+        }
+
+      } catch (e) {
+        showError(errorEl, 'Impossible de contacter le serveur');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Se connecter';
+      }
+    }
+
+    async function register() {
+      const token = localStorage.getItem('lss_token');
+      const username = document.getElementById('regUsername').value.trim();
+      const password = document.getElementById('regPassword').value;
+      const role = document.getElementById('regRole').value;
+      const btn = document.getElementById('registerBtn');
+      const errorEl = document.getElementById('registerError');
+      const successEl = document.getElementById('registerSuccess');
+
+      if (!username || !password) {
+        showError(errorEl, 'Veuillez remplir tous les champs');
+        return;
+      }
+
+      btn.disabled = true;
+      errorEl.style.display = 'none';
+      successEl.style.display = 'none';
+
+      try {
+        const res = await fetch(`${API}/api/auth/register`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ username, password, role })
+        });
+
+        const data = await res.json();
+        if (!res.ok) { showError(errorEl, data.error); return; }
+
+        successEl.textContent = `✓ Compte "${username}" créé avec le rôle "${role}"`;
+        successEl.style.display = 'block';
+        document.getElementById('regUsername').value = '';
+        document.getElementById('regPassword').value = '';
+
+      } catch (e) {
+        showError(errorEl, 'Erreur serveur');
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    function showError(el, msg) {
+      el.textContent = msg;
+      el.style.display = 'block';
+    }
+
+    // Enter key support
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        const loginVisible = document.getElementById('loginForm').style.display !== 'none';
+        if (loginVisible) login();
+        else register();
+      }
+    });
+  </script>
+</body>
+</html>

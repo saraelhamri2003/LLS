@@ -1,0 +1,42 @@
+services:
+  backend:
+    image: aymannnnnh/lss_assistant-backend:latest
+    build:
+      context: ./backend/backend
+      dockerfile: Dockerfile
+    ports:
+      - "5001:5001"
+    environment:
+      OLLAMA_BASE_URL: "http://ollama:11434"
+    depends_on:
+      - ollama
+
+  frontend:
+    image: aymannnnnh/lss_assistant-frontend:latest
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE: /api
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
+
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+
+  ollama-pull:
+    image: ollama/ollama:latest
+    command: ["ollama", "pull", "llama3:8b"]
+    depends_on:
+      - ollama
+    volumes:
+      - ollama_data:/root/.ollama
+
+volumes:
+  ollama_data:

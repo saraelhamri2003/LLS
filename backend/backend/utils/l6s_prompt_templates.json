@@ -1,0 +1,185 @@
+{
+  "system_prompts": {
+    "en": {
+      "main": "You are an expert Lean Six Sigma (L6S) advisor. Your role is to provide data-driven recommendations based on the L6S implementation database containing {total_samples} organizations.\n\nCore Capabilities:\n1. Strategy Recommendation: Predict optimal implementation strategy and performance based on CSF scores\n2. Goal Analysis: Recommend CSF values needed to achieve specific performance targets\n3. CSF Explanation: Provide detailed descriptions of Critical Success Factors\n4. Performance Analytics: Generate comprehensive performance analysis reports\n\nDatabase Structure:\n- IL1-IL7: Lean Critical Success Factors (1-5 scale)\n- IS1-IS7: Six Sigma Critical Success Factors (1-5 scale)\n- M1-M7: Maturity Critical Success Factors (1-5 scale)\n- Performance Range: 30-85% (output variable)\n- Available Strategies: 'LM then SS', 'SS then LM', 'LM & SS', 'Failure'\n\nResponse Guidelines:\n- Always respond in English\n- Only make predictions based on provided CSF values\n- Explain confidence levels and methodology\n- Reference similar cases in the database when relevant\n- If asked about performance analytics, include the detailed breakdown when context allows\n\nKey Terms:\n- CSF: Critical Success Factor\n- L6S: Lean Six Sigma\n- Performance: Expected outcome percentage (30-85%)\n- Strategy: Recommended implementation approach"
+    },
+    "fr": {
+      "main": "Vous êtes un expert-conseil Lean Six Sigma (L6S). Votre rôle est de fournir des recommandations basées sur les données de la base L6S contenant {total_samples} organisations.\n\nCapacités principales:\n1. Recommandation de stratégie: Prédire la stratégie d'implémentation optimale et la performance basée sur les scores CSF\n2. Analyse d'objectifs: Recommander les valeurs CSF nécessaires pour atteindre des cibles de performance spécifiques\n3. Explication CSF: Fournir des descriptions détaillées des Facteurs Critiques de Succès\n4. Analyse de performance: Générer des rapports complets d'analyse de performance\n\nStructure de la base:\n- IL1-IL7: Facteurs Critiques de Succès Lean (échelle 1-5)\n- IS1-IS7: Facteurs Critiques de Succès Six Sigma (échelle 1-5)\n- M1-M7: Facteurs Critiques de Maturité (échelle 1-5)\n- Performance: 30-85% (variable de sortie)\n- Stratégies disponibles: 'LM then SS', 'SS then LM', 'LM & SS', 'Failure'\n\nDirectives de réponse:\n- Toujours répondre en français\n- Ne faire des prédictions que sur la base des valeurs CSF fournies\n- Expliquer les niveaux de confiance et la méthodologie\n- Référencer les cas similaires dans la base quand c'est pertinent\n- Si on vous demande des analyses de performance, inclure le détail quand le contexte le permet\n\nTermes clés:\n- CSF: Facteur Critique de Succès\n- L6S: Lean Six Sigma\n- Performance: Résultat attendu en pourcentage (30-85%)\n- Stratégie: Approche d'implémentation recommandée"
+    }
+  },
+  "response_templates": {
+    "with_performance_table": {
+      "en": "## Performance Analytics Overview\n\n**Recommended Strategy**: {recommended_strategy}\n**Current Performance**: {current_performance:.1f}%\n**Target Performance**: {target_performance:.1f}%\n\n### Primary Performance Criteria\n{criteria_breakdown}\n\n### Sub-Criteria Breakdown\n{sub_criteria_breakdown}",
+      "fr": "## Aperçu des Analyses de Performance\n\n**Stratégie Recommandée**: {recommended_strategy}\n**Performance Actuelle**: {current_performance:.1f}%\n**Performance Cible**: {target_performance:.1f}%\n\n### Critères de Performance Principaux\n{criteria_breakdown}\n\n### Détail des Sous-Critères\n{sub_criteria_breakdown}"
+    },
+    "csf_radar_explanation": {
+      "en": "Your CSF profile shows:\n- {top_strengths} (strongest areas)\n- {improvement_areas} (areas needing improvement)\nThis profile predicts {predicted_performance:.1f}% performance with {recommended_strategy} strategy.",
+      "fr": "Votre profil CSF montre:\n- {top_strengths} (domaines forts)\n- {improvement_areas} (domaines nécessitant des améliorations)\nCe profil prédit {predicted_performance:.1f}% de performance avec la stratégie {recommended_strategy}."
+    }
+  },
+  "triggers": {
+    "include_performance_table": {
+      "en": [
+        "performance table",
+        "performance analytics", 
+        "breakdown",
+        "overview",
+        "analysis",
+        "performance report",
+        "dashboard",
+        "performance metrics",
+        "performance summary",
+        "show performance",
+        "performance details",
+        "analytics",
+        "report",
+        "performance gap",
+        "ecart de performance",
+        "analyse de performance"
+      ],
+      "fr": [
+        "tableau de performance",
+        "analyse de performance",
+        "décomposition",
+        "vue d'ensemble",
+        "analyse",
+        "rapport de performance",
+        "tableau de bord",
+        "métriques de performance",
+        "résumé de performance",
+        "afficher la performance",
+        "détails de performance",
+        "analytique",
+        "rapport",
+        "écart de performance",
+        "performance analytics",
+        "bilan de performance"
+      ]
+    },
+    "include_csf_explanation": {
+      "en": [
+        "what does",
+        "explain",
+        "describe",
+        "definition",
+        "mean",
+        "meaning",
+        "signification",
+        "niveau",
+        "level",
+        "CSF",
+        "IL",
+        "IS",
+        "M",
+        "critical success factor"
+      ],
+      "fr": [
+        "qu'est-ce que",
+        "explique",
+        "décris",
+        "définition",
+        "signifie",
+        "signification",
+        "niveau",
+        "facteur critique",
+        "CSF",
+        "IL",
+        "IS",
+        "M",
+        "facteur critique de succès"
+      ]
+    }
+  },
+  "query_examples": {
+    "en": [
+      {
+        "query": "What strategy should I use with IL1=4, IS2=3, M5=5?",
+        "response_type": "strategy_recommendation",
+        "include_table": false
+      },
+      {
+        "query": "How do I achieve 80% performance?",
+        "response_type": "goal_analysis",
+        "include_table": false
+      },
+      {
+        "query": "Show me a performance breakdown with my scores",
+        "response_type": "general_with_context",
+        "include_table": true
+      },
+      {
+        "query": "I want to see performance analytics",
+        "response_type": "analytics_request",
+        "include_table": true
+      },
+      {
+        "query": "Explain IL2 level 3",
+        "response_type": "csf_explanation",
+        "include_table": false
+      }
+    ],
+    "fr": [
+      {
+        "query": "Quelle stratégie devrais-je utiliser avec IL1=4, IS2=3, M5=5 ?",
+        "response_type": "strategy_recommendation",
+        "include_table": false
+      },
+      {
+        "query": "Comment atteindre 80% de performance ?",
+        "response_type": "goal_analysis",
+        "include_table": false
+      },
+      {
+        "query": "Montre-moi une décomposition de performance avec mes scores",
+        "response_type": "general_with_context",
+        "include_table": true
+      },
+      {
+        "query": "Je veux voir les analyses de performance",
+        "response_type": "analytics_request",
+        "include_table": true
+      },
+      {
+        "query": "Explique le niveau 3 de IL2",
+        "response_type": "csf_explanation",
+        "include_table": false
+      }
+    ]
+  },
+  "response_formatting": {
+    "en": {
+      "strategy_explanation": "**Recommended Strategy**: {strategy}\n*{strategy_description}*\n\n**Predicted Performance**: {performance:.1f}%\n**Confidence**: {confidence:.1f}%\n\n**Similar Organizations**: {similar_cases} achieved {avg_performance:.1f}% average performance",
+      "performance_breakdown": "**{category}** | Weight: {weight} | Current: {current:.1f}% | Target: {target:.1f}% | Gap: {gap:.1f}%",
+      "sub_criteria_detail": "- {sub_category}: Weight {weight}, Contribution {contribution:.1f}%",
+      "csf_level_description": "**{factor} Level {level}**: {description}"
+    },
+    "fr": {
+      "strategy_explanation": "**Stratégie Recommandée**: {strategy}\n*{strategy_description}*\n\n**Performance Prévue**: {performance:.1f}%\n**Confiance**: {confidence:.1f}%\n\n**Organisations Similaires**: {similar_cases} ont atteint {avg_performance:.1f}% de performance moyenne",
+      "performance_breakdown": "**{category}** | Poids: {weight} | Actuel: {current:.1f}% | Cible: {target:.1f}% | Écart: {gap:.1f}%",
+      "sub_criteria_detail": "- {sub_category}: Poids {weight}, Contribution {contribution:.1f}%",
+      "csf_level_description": "**{factor} Niveau {level}**: {description}"
+    }
+  },
+  "context_enhancement": {
+    "en": "The following performance analytics are available based on your query:\n{analytics_context}\n\nUse this data to enhance your response when the user's query relates to performance analysis, strategy recommendations, or overall L6S implementation guidance. Include visual elements when relevant to help the user understand their performance trajectory and improvement opportunities.",
+    "fr": "Les analyses de performance suivantes sont disponibles selon votre requête:\n{analytics_context}\n\nUtilisez ces données pour enrichir votre réponse quand la requête de l'utilisateur concerne l'analyse de performance, les recommandations de stratégie ou l'orientation générale sur l'implémentation L6S. Incluez des éléments visuels quand cela est pertinent pour aider l'utilisateur à comprendre sa trajectoire de performance et ses opportunités d'amélioration."
+  },
+  "api_configurations": {
+    "ollama": {
+      "system_role": "system",
+      "user_role": "user",
+      "assistant_role": "assistant"
+    },
+    "gemini": {
+      "system_role": "user", 
+      "user_role": "user",
+      "assistant_role": "model",
+      "system_prefix": "System Instructions: "
+    },
+    "openai": {
+      "system_role": "system",
+      "user_role": "user", 
+      "assistant_role": "assistant"
+    }
+  }
+}
