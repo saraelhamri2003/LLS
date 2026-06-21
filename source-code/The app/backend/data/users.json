@@ -1,0 +1,26 @@
+[
+  {
+    "id": 1,
+    "username": "admin",
+    "password": "626fa4019ece14ef8dda3dc5f9e8b617f2db6556689fdc24d1f0b188a33019ab",
+    "role": "admin"
+  },
+  {
+    "id": 2,
+    "username": "user",
+    "password": "3eb3e027410e0c8615c40c745180781baf545b47a498fb79f05beb32798c352b",
+    "role": "utilisateur"
+  },
+  {
+    "id": 1782043654559,
+    "username": "Hajar hajbi",
+    "password": "626fa4019ece14ef8dda3dc5f9e8b617f2db6556689fdc24d1f0b188a33019ab",
+    "role": "utilisateur"
+  },
+  {
+    "id": 1782045584058,
+    "username": "Sara",
+    "password": "626fa4019ece14ef8dda3dc5f9e8b617f2db6556689fdc24d1f0b188a33019ab",
+    "role": "utilisateur"
+  }
+]

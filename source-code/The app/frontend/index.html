@@ -4,6 +4,15 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Lean Six Sigma Assistant</title>
+    <script>
+      // AUTH GATE - redirect to login if no token
+      (function() {
+        const token = localStorage.getItem('lss_token');
+        if (!token && window.location.pathname !== '/login.html') {
+          window.location.href = '/login.html';
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

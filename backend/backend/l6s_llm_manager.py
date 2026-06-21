@@ -1,49 +1,7 @@
 import json
 import os
-import re
 import urllib.error
 import urllib.request
-
-
-def _normalize_api_model_name(model_name):
-    """Normalize human-readable model labels to provider-friendly IDs."""
-    if model_name is None:
-        return ""
-
-    raw = str(model_name).strip()
-    if not raw:
-        return ""
-
-    lowered = raw.lower()
-    aliases = {
-        "gemini 3 pro": "gemini-3-pro",
-        "gemini 3 flash": "gemini-3-flash",
-        "gemini 2.5 pro": "gemini-2.5-pro",
-        "gemini 2.5 flash": "gemini-2.5-flash",
-        "gemini 2.5 flash-lite": "gemini-2.5-flash-lite",
-        "gpt-5.2 instant": "gpt-5.2-instant",
-        "gpt-5.2 thinking": "gpt-5.2-thinking",
-        "gpt-5.2 pro": "gpt-5.2-pro",
-        "gpt-5.1 instant": "gpt-5.1-instant",
-        "gpt-5.1 thinking": "gpt-5.1-thinking",
-        "gpt-4.1 mini": "gpt-4.1-mini",
-        "gpt-4.1 nano": "gpt-4.1-nano",
-        "claude opus 4.5": "claude-opus-4-5",
-        "claude sonnet 4.5": "claude-sonnet-4-5",
-        "claude haiku 4.5": "claude-haiku-4-5",
-    }
-    if lowered in aliases:
-        return aliases[lowered]
-
-    # Keep already machine-friendly IDs untouched.
-    if " " not in raw and raw == lowered:
-        return raw
-
-    normalized = lowered.replace("_", "-")
-    normalized = re.sub(r"\s+", "-", normalized)
-    normalized = re.sub(r"[^a-z0-9._:/-]", "-", normalized)
-    normalized = re.sub(r"-{2,}", "-", normalized).strip("-")
-    return normalized or raw
 
 
 class _OllamaHttpClient:
@@ -86,8 +44,7 @@ class LLMManager:
         api_key=None,
     ):
         self.local_model = local_model
-        self.requested_api_model = api_model
-        self.api_model = _normalize_api_model_name(api_model)
+        self.api_model = api_model
         self.temperature = temperature
         self.api_key = api_key
 
@@ -119,11 +76,7 @@ class LLMManager:
     def get_available_models(self):
         return {
             "local": {"available": self._local_llm is not None, "model": self.local_model},
-            "api": {
-                "available": self._api_llm is not None,
-                "model": self.api_model,
-                "requested_model": self.requested_api_model,
-            },
+            "api": {"available": self._api_llm is not None, "model": self.api_model},
             "active": self.active,
         }
 
@@ -221,25 +174,18 @@ class LLMManager:
             except Exception:
                 return None
 
-        if any(token in api_model_lower for token in ("gpt", "openai", "codex", "vision", "audio")) or re.fullmatch(
-            r"o[1-9](?:[._-].*)?",
-            api_model_lower,
-        ):
+        if any(token in api_model_lower for token in ("gpt", "openai", "codex", "vision", "audio")):
             try:
                 from langchain_openai import ChatOpenAI
             except Exception:
                 return None
             key = api_key or os.getenv("OPENAI_API_KEY")
-            base_url = os.getenv("OPENAI_BASE_URL")
             try:
-                kwargs = {
-                    "model": self.api_model,
-                    "temperature": self.temperature,
-                    "api_key": key,
-                }
-                if base_url:
-                    kwargs["base_url"] = base_url
-                return ChatOpenAI(**kwargs)
+                return ChatOpenAI(
+                    model=self.api_model,
+                    temperature=self.temperature,
+                    api_key=key,
+                )
             except Exception:
                 return None
 
@@ -247,6 +193,14 @@ class LLMManager:
 
     def _fallback_response(self):
         return (
-            "LLM is not configured. Provide CSF values for predictions, or configure "
-            "OLLAMA_BASE_URL or an API key for a supported model."
+            "🤖 **LLM Connection Offline**\n\n"
+            "To enable the AI Chatbot to respond to your queries, please do one of the following:\n\n"
+            "1. **Configure in UI**: Click the **Settings Gear Icon** ⚙️ at the top of the chat screen, toggle **Use API Model**, enter your **Gemini / OpenAI API Key**, and select a model (e.g., Gemini 3 Flash).\n"
+            "2. **Configure via Backend Environment**: Create a `.env` file in `source-code/The app/backend/.env` with your API key:\n"
+            "   ```env\n"
+            "   GOOGLE_API_KEY=your_gemini_key\n"
+            "   ```\n"
+            "   *(or set `OPENAI_API_KEY` for OpenAI, or `ANTHROPIC_API_KEY` for Anthropic)*\n"
+            "3. **Run Ollama Locally**: If you prefer a local model, ensure Ollama is running on your machine (default port 11434) with `llama3:8b` downloaded (`ollama pull llama3:8b`).\n\n"
+            "👉 *Note: You can still run the performance engine and recommendations without an LLM! Just fill out the **Guided Assessment** or parameters on the sidebar and click **Calculate Performance**.*"
         )

@@ -1,4 +1,4 @@
-﻿import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { Send, Calculator, MessageSquare, TrendingUp, AlertCircle, Loader2, Sun, Moon, User, Users, Database, BarChart3, LogOut, ChevronDown, Shield } from 'lucide-react';
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:5001';
@@ -811,6 +811,165 @@ const LeanSixSigmaChatbot = () => {
     };
     loadLevels();
   }, [uiLanguage]);
+
+  // ===== ADMIN PANEL DATA FETCHING & STATE =====
+  const [users, setUsers] = useState([]);
+  const [usersLoading, setUsersLoading] = useState(false);
+  const [usersError, setUsersError] = useState(null);
+
+  const [newUserUsername, setNewUserUsername] = useState('');
+  const [newUserPassword, setNewUserPassword] = useState('');
+  const [newUserRole, setNewUserRole] = useState('utilisateur');
+  const [registerLoading, setRegisterLoading] = useState(false);
+  const [registerError, setRegisterError] = useState(null);
+  const [registerSuccess, setRegisterSuccess] = useState(null);
+
+  const [companies, setCompanies] = useState([]);
+  const [companiesLoading, setCompaniesLoading] = useState(false);
+  const [companiesError, setCompaniesError] = useState(null);
+  const [companiesPage, setCompaniesPage] = useState(1);
+  const [companiesSearch, setCompaniesSearch] = useState('');
+  const [companiesFilterStrategy, setCompaniesFilterStrategy] = useState('all');
+  const [companiesFilterCluster, setCompaniesFilterCluster] = useState('all');
+
+  const [statsData, setStatsData] = useState(null);
+  const [statsLoading, setStatsLoading] = useState(false);
+  const [statsError, setStatsError] = useState(null);
+
+  const fetchUsers = async () => {
+    setUsersLoading(true);
+    setUsersError(null);
+    try {
+      const response = await fetch(`${API_BASE}/api/auth/users`, {
+        headers: {
+          Authorization: 'Bearer ' + localStorage.getItem('lss_token')
+        }
+      });
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.error || 'Failed to fetch users');
+      }
+      const data = await response.json();
+      setUsers(data);
+    } catch (err) {
+      setUsersError(err.message);
+    } finally {
+      setUsersLoading(false);
+    }
+  };
+
+  const fetchCompanies = async () => {
+    setCompaniesLoading(true);
+    setCompaniesError(null);
+    try {
+      const response = await fetch(`${API_BASE}/api/companies`, {
+        headers: {
+          Authorization: 'Bearer ' + localStorage.getItem('lss_token')
+        }
+      });
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.error || 'Failed to fetch companies');
+      }
+      const data = await response.json();
+      setCompanies(data);
+    } catch (err) {
+      setCompaniesError(err.message);
+    } finally {
+      setCompaniesLoading(false);
+    }
+  };
+
+  const fetchStats = async () => {
+    setStatsLoading(true);
+    setStatsError(null);
+    try {
+      const response = await fetch(`${API_BASE}/api/model-stats`, {
+        headers: {
+          Authorization: 'Bearer ' + localStorage.getItem('lss_token')
+        }
+      });
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.error || 'Failed to fetch stats');
+      }
+      const data = await response.json();
+      setStatsData(data);
+    } catch (err) {
+      setStatsError(err.message);
+    } finally {
+      setStatsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (adminPanel === 'users') {
+      fetchUsers();
+    } else if (adminPanel === 'companies') {
+      fetchCompanies();
+    } else if (adminPanel === 'stats') {
+      fetchStats();
+    }
+  }, [adminPanel]);
+
+  const handleRegisterUser = async (e) => {
+    e.preventDefault();
+    if (!newUserUsername.trim() || !newUserPassword) {
+      setRegisterError('Please fill in all fields');
+      return;
+    }
+    setRegisterLoading(true);
+    setRegisterError(null);
+    setRegisterSuccess(null);
+    try {
+      const response = await fetch(`${API_BASE}/api/auth/register`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer ' + localStorage.getItem('lss_token')
+        },
+        body: JSON.stringify({
+          username: newUserUsername.trim(),
+          password: newUserPassword,
+          role: newUserRole
+        })
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || 'Registration failed');
+      }
+      setRegisterSuccess(`User "${newUserUsername}" registered successfully.`);
+      setNewUserUsername('');
+      setNewUserPassword('');
+      setNewUserRole('utilisateur');
+      fetchUsers();
+    } catch (err) {
+      setRegisterError(err.message);
+    } finally {
+      setRegisterLoading(false);
+    }
+  };
+
+  const handleDeleteUser = async (userId, username) => {
+    if (!window.confirm(`Are you sure you want to delete user "${username}"?`)) {
+      return;
+    }
+    try {
+      const response = await fetch(`${API_BASE}/api/auth/users/${userId}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: 'Bearer ' + localStorage.getItem('lss_token')
+        }
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to delete user');
+      }
+      fetchUsers();
+    } catch (err) {
+      alert(err.message);
+    }
+  };
 
   const detectLanguage = (text) => {
     if (/[\u0600-\u06FF]/.test(text)) return 'Arabic';
@@ -2501,20 +2660,234 @@ ${scoreContext}` : messageText;
               <div>
                 <button onClick={() => setAdminPanel(null)} style={{
                   background: 'transparent', border: 'none', color: isDark ? '#94a3b8' : '#64748b',
-                  fontSize: '13px', cursor: 'pointer', marginBottom: '16px', padding: 0
+                  fontSize: '13px', cursor: 'pointer', marginBottom: '16px', padding: 0,
+                  display: 'flex', alignItems: 'center', gap: '4px'
                 }}>← Back</button>
                 <h3 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '16px', color: isDark ? '#fff' : '#0f172a' }}>
                   User Management
                 </h3>
-                <p style={{ fontSize: '14px', color: isDark ? '#94a3b8' : '#64748b', marginBottom: '16px' }}>
-                  Add, edit, or remove users and assign roles.
+                <p style={{ fontSize: '14px', color: isDark ? '#94a3b8' : '#64748b', marginBottom: '20px' }}>
+                  Add, view, or remove users and assign roles.
                 </p>
-                <div style={{ padding: '20px', background: isDark ? '#1e293b' : '#f8fafc', borderRadius: '10px', textAlign: 'center', color: isDark ? '#94a3b8' : '#64748b', fontSize: '13px' }}>
-                  Coming soon — connects to /api/auth/users
+
+                {/* Registration Form Card */}
+                <div style={{
+                  padding: '20px',
+                  background: isDark ? '#1e293b' : '#f8fafc',
+                  borderRadius: '12px',
+                  border: '1px solid',
+                  borderColor: isDark ? '#334155' : '#e2e8f0',
+                  marginBottom: '24px'
+                }}>
+                  <h4 style={{ fontSize: '14px', fontWeight: 600, color: isDark ? '#f1f5f9' : '#1e293b', marginBottom: '14px' }}>
+                    Create New User
+                  </h4>
+                  <form onSubmit={handleRegisterUser} style={{ display: 'grid', gap: '12px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                      <div>
+                        <label style={{ fontSize: '11px', fontWeight: 600, color: isDark ? '#94a3b8' : '#64748b', display: 'block', marginBottom: '4px' }}>
+                          Username
+                        </label>
+                        <input
+                          type="text"
+                          value={newUserUsername}
+                          onChange={(e) => setNewUserUsername(e.target.value)}
+                          placeholder="e.g. johndoe"
+                          style={{
+                            width: '100%',
+                            padding: '8px 12px',
+                            background: isDark ? '#0f172a' : '#fff',
+                            border: '1px solid',
+                            borderColor: isDark ? '#334155' : '#cbd5e1',
+                            borderRadius: '6px',
+                            color: isDark ? '#fff' : '#0f172a',
+                            fontSize: '13px'
+                          }}
+                        />
+                      </div>
+                      <div>
+                        <label style={{ fontSize: '11px', fontWeight: 600, color: isDark ? '#94a3b8' : '#64748b', display: 'block', marginBottom: '4px' }}>
+                          Password
+                        </label>
+                        <input
+                          type="password"
+                          value={newUserPassword}
+                          onChange={(e) => setNewUserPassword(e.target.value)}
+                          placeholder="••••••••"
+                          style={{
+                            width: '100%',
+                            padding: '8px 12px',
+                            background: isDark ? '#0f172a' : '#fff',
+                            border: '1px solid',
+                            borderColor: isDark ? '#334155' : '#cbd5e1',
+                            borderRadius: '6px',
+                            color: isDark ? '#fff' : '#0f172a',
+                            fontSize: '13px'
+                          }}
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label style={{ fontSize: '11px', fontWeight: 600, color: isDark ? '#94a3b8' : '#64748b', display: 'block', marginBottom: '4px' }}>
+                        Role
+                      </label>
+                      <select
+                        value={newUserRole}
+                        onChange={(e) => setNewUserRole(e.target.value)}
+                        style={{
+                          width: '100%',
+                          padding: '8px 12px',
+                          background: isDark ? '#0f172a' : '#fff',
+                          border: '1px solid',
+                          borderColor: isDark ? '#334155' : '#cbd5e1',
+                          borderRadius: '6px',
+                          color: isDark ? '#fff' : '#0f172a',
+                          fontSize: '13px'
+                        }}
+                      >
+                        <option value="utilisateur">Utilisateur (User)</option>
+                        <option value="admin">Admin (Administrator)</option>
+                      </select>
+                    </div>
+                    {registerError && (
+                      <div style={{ color: '#ef4444', fontSize: '12px', marginTop: '4px' }}>
+                        ⚠️ {registerError}
+                      </div>
+                    )}
+                    {registerSuccess && (
+                      <div style={{ color: '#10b981', fontSize: '12px', marginTop: '4px' }}>
+                        {registerSuccess}
+                      </div>
+                    )}
+                    <button
+                      type="submit"
+                      disabled={registerLoading}
+                      style={{
+                        padding: '10px 16px',
+                        background: 'var(--accent, #3b82f6)',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '6px',
+                        fontWeight: 600,
+                        fontSize: '13px',
+                        cursor: 'pointer',
+                        marginTop: '4px',
+                        transition: 'opacity 0.15s'
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.opacity = '0.9'}
+                      onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
+                    >
+                      {registerLoading ? 'Creating...' : 'Register User'}
+                    </button>
+                  </form>
                 </div>
+
+                {/* User List Container */}
+                <h4 style={{ fontSize: '14px', fontWeight: 600, color: isDark ? '#f1f5f9' : '#1e293b', marginBottom: '12px' }}>
+                  Registered Users
+                </h4>
+                {usersLoading ? (
+                  <div style={{ textAlign: 'center', padding: '20px', color: isDark ? '#94a3b8' : '#64748b' }}>
+                    <Loader2 className="w-5 h-5 animate-spin mx-auto mb-2" />
+                    Loading users...
+                  </div>
+                ) : usersError ? (
+                  <div style={{ padding: '16px', background: 'rgba(239,68,68,0.1)', color: '#ef4444', borderRadius: '8px', fontSize: '13px' }}>
+                    Failed to load users: {usersError}
+                  </div>
+                ) : users.length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: '20px', color: isDark ? '#94a3b8' : '#64748b', fontSize: '13px' }}>
+                    No users registered.
+                  </div>
+                ) : (
+                  <div style={{ display: 'grid', gap: '10px' }}>
+                    {users.map((u) => (
+                      <div
+                        key={u.id}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          padding: '12px 16px',
+                          background: isDark ? '#1e293b' : '#f8fafc',
+                          border: '1px solid',
+                          borderColor: isDark ? '#334155' : '#e2e8f0',
+                          borderRadius: '8px'
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          <div style={{
+                            width: '32px',
+                            height: '32px',
+                            borderRadius: '50%',
+                            background: u.role === 'admin' ? '#ef444422' : '#3b82f622',
+                            color: u.role === 'admin' ? '#ef4444' : '#3b82f6',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontWeight: 600,
+                            fontSize: '14px'
+                          }}>
+                            {u.username.substring(0, 2).toUpperCase()}
+                          </div>
+                          <div>
+                            <div style={{ fontWeight: 600, fontSize: '14px', color: isDark ? '#fff' : '#0f172a' }}>
+                              {u.username}
+                              {currentUser?.id === u.id && (
+                                <span style={{ fontSize: '10px', opacity: 0.6, marginLeft: '6px' }}>(You)</span>
+                              )}
+                            </div>
+                            <div style={{ marginTop: '2px' }}>
+                              <span style={{
+                                fontSize: '10px',
+                                textTransform: 'uppercase',
+                                fontWeight: 700,
+                                padding: '2px 6px',
+                                borderRadius: '4px',
+                                background: u.role === 'admin' ? 'rgba(239,68,68,0.15)' : 'rgba(59,130,246,0.15)',
+                                color: u.role === 'admin' ? '#ef4444' : '#3b82f6'
+                              }}>
+                                {u.role}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Delete Button */}
+                        <button
+                          onClick={() => handleDeleteUser(u.id, u.username)}
+                          disabled={currentUser?.id === u.id}
+                          style={{
+                            background: 'transparent',
+                            border: 'none',
+                            color: currentUser?.id === u.id ? (isDark ? '#475569' : '#cbd5e1') : '#ef4444',
+                            cursor: currentUser?.id === u.id ? 'not-allowed' : 'pointer',
+                            padding: '6px',
+                            borderRadius: '6px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            transition: 'background 0.15s'
+                          }}
+                          onMouseEnter={(e) => {
+                            if (currentUser?.id !== u.id) e.currentTarget.style.background = 'rgba(239,68,68,0.1)';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.background = 'transparent';
+                          }}
+                          title={currentUser?.id === u.id ? "You cannot delete yourself" : "Delete User"}
+                        >
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
- 
+
             {adminPanel === 'companies' && (
               <div>
                 <button onClick={() => setAdminPanel(null)} style={{
@@ -2524,15 +2897,250 @@ ${scoreContext}` : messageText;
                 <h3 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '16px', color: isDark ? '#fff' : '#0f172a' }}>
                   Companies Database
                 </h3>
-                <p style={{ fontSize: '14px', color: isDark ? '#94a3b8' : '#64748b', marginBottom: '16px' }}>
-                  Manage the 156 companies used to train the model.
+                <p style={{ fontSize: '14px', color: isDark ? '#94a3b8' : '#64748b', marginBottom: '20px' }}>
+                  Browse and analyze the 156 companies used to train the model.
                 </p>
-                <div style={{ padding: '20px', background: isDark ? '#1e293b' : '#f8fafc', borderRadius: '10px', textAlign: 'center', color: isDark ? '#94a3b8' : '#64748b', fontSize: '13px' }}>
-                  Coming soon — connects to the dataset
+
+                {/* Filters Row */}
+                <div style={{
+                  display: 'flex',
+                  gap: '12px',
+                  marginBottom: '20px',
+                  flexWrap: 'wrap'
+                }}>
+                  <input
+                    type="text"
+                    value={companiesSearch}
+                    onChange={(e) => {
+                      setCompaniesSearch(e.target.value);
+                      setCompaniesPage(1);
+                    }}
+                    placeholder="Search by strategy or estimation..."
+                    style={{
+                      flex: 1,
+                      minWidth: '200px',
+                      padding: '8px 12px',
+                      background: isDark ? '#1e293b' : '#fff',
+                      border: '1px solid',
+                      borderColor: isDark ? '#334155' : '#cbd5e1',
+                      borderRadius: '6px',
+                      color: isDark ? '#fff' : '#0f172a',
+                      fontSize: '13px'
+                    }}
+                  />
+                  <select
+                    value={companiesFilterStrategy}
+                    onChange={(e) => {
+                      setCompaniesFilterStrategy(e.target.value);
+                      setCompaniesPage(1);
+                    }}
+                    style={{
+                      padding: '8px 12px',
+                      background: isDark ? '#1e293b' : '#fff',
+                      border: '1px solid',
+                      borderColor: isDark ? '#334155' : '#cbd5e1',
+                      borderRadius: '6px',
+                      color: isDark ? '#fff' : '#0f172a',
+                      fontSize: '13px'
+                    }}
+                  >
+                    <option value="all">All Strategies</option>
+                    <option value="SS then LM">SS then LM</option>
+                    <option value="LM then SS">LM then SS</option>
+                    <option value="SS and LM parallel">SS and LM parallel</option>
+                    <option value="No orientation">No orientation</option>
+                  </select>
+                  <select
+                    value={companiesFilterCluster}
+                    onChange={(e) => {
+                      setCompaniesFilterCluster(e.target.value);
+                      setCompaniesPage(1);
+                    }}
+                    style={{
+                      padding: '8px 12px',
+                      background: isDark ? '#1e293b' : '#fff',
+                      border: '1px solid',
+                      borderColor: isDark ? '#334155' : '#cbd5e1',
+                      borderRadius: '6px',
+                      color: isDark ? '#fff' : '#0f172a',
+                      fontSize: '13px'
+                    }}
+                  >
+                    <option value="all">All Clusters</option>
+                    <option value="0">Cluster 0</option>
+                    <option value="1">Cluster 1</option>
+                    <option value="2">Cluster 2</option>
+                    <option value="3">Cluster 3</option>
+                  </select>
                 </div>
+
+                {companiesLoading ? (
+                  <div style={{ textAlign: 'center', padding: '40px', color: isDark ? '#94a3b8' : '#64748b' }}>
+                    <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2" />
+                    Loading companies database...
+                  </div>
+                ) : companiesError ? (
+                  <div style={{ padding: '16px', background: 'rgba(239,68,68,0.1)', color: '#ef4444', borderRadius: '8px', fontSize: '13px' }}>
+                    Failed to load database: {companiesError}
+                  </div>
+                ) : (
+                  <div>
+                    {/* Table View */}
+                    {(() => {
+                      // Filter companies
+                      const filtered = companies.filter((c, idx) => {
+                        const searchLower = companiesSearch.toLowerCase();
+                        const matchesSearch =
+                          (c.strategie && c.strategie.toLowerCase().includes(searchLower)) ||
+                          (c.estimations && c.estimations.toLowerCase().includes(searchLower)) ||
+                          `#${idx + 1}`.includes(searchLower);
+                        
+                        const matchesStrategy =
+                          companiesFilterStrategy === 'all' ||
+                          c.strategie === companiesFilterStrategy;
+                        
+                        const matchesCluster =
+                          companiesFilterCluster === 'all' ||
+                          String(c.cluster_id) === companiesFilterCluster;
+
+                        return matchesSearch && matchesStrategy && matchesCluster;
+                      });
+
+                      const itemsPerPage = 12;
+                      const totalPages = Math.ceil(filtered.length / itemsPerPage) || 1;
+                      const currentPage = Math.min(companiesPage, totalPages);
+                      const startIndex = (currentPage - 1) * itemsPerPage;
+                      const paginated = filtered.slice(startIndex, startIndex + itemsPerPage);
+
+                      // Helper to compute averages
+                      const getAverageScore = (comp, regex) => {
+                        const keys = Object.keys(comp).filter(k => regex.test(k));
+                        if (keys.length === 0) return 0;
+                        const sum = keys.reduce((acc, k) => acc + comp[k], 0);
+                        return (sum / keys.length).toFixed(1);
+                      };
+
+                      return (
+                        <>
+                          <div style={{ fontSize: '12px', color: isDark ? '#94a3b8' : '#64748b', marginBottom: '10px', fontWeight: 500 }}>
+                            Showing {filtered.length === 0 ? 0 : startIndex + 1} - {Math.min(startIndex + itemsPerPage, filtered.length)} of {filtered.length} companies
+                          </div>
+                          
+                          <div style={{ overflowX: 'auto', border: '1px solid', borderColor: isDark ? '#334155' : '#e2e8f0', borderRadius: '8px' }}>
+                            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', textAlign: 'left' }}>
+                              <thead>
+                                <tr style={{ background: isDark ? '#1e293b' : '#f1f5f9', borderBottom: '1px solid', borderColor: isDark ? '#334155' : '#e2e8f0' }}>
+                                  <th style={{ padding: '12px 16px', color: isDark ? '#94a3b8' : '#475569', fontWeight: 600 }}>ID</th>
+                                  <th style={{ padding: '12px 16px', color: isDark ? '#94a3b8' : '#475569', fontWeight: 600 }}>Lean Avg (IL)</th>
+                                  <th style={{ padding: '12px 16px', color: isDark ? '#94a3b8' : '#475569', fontWeight: 600 }}>Six Sigma Avg (IS)</th>
+                                  <th style={{ padding: '12px 16px', color: isDark ? '#94a3b8' : '#475569', fontWeight: 600 }}>Maturity Avg (M)</th>
+                                  <th style={{ padding: '12px 16px', color: isDark ? '#94a3b8' : '#475569', fontWeight: 600 }}>Recommended Strategy</th>
+                                  <th style={{ padding: '12px 16px', color: isDark ? '#94a3b8' : '#475569', fontWeight: 600 }}>Estimation</th>
+                                  <th style={{ padding: '12px 16px', color: isDark ? '#94a3b8' : '#475569', fontWeight: 600 }}>Cluster</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {paginated.map((c, i) => {
+                                  const companyId = startIndex + i + 1;
+                                  return (
+                                    <tr
+                                      key={i}
+                                      style={{
+                                        borderBottom: '1px solid',
+                                        borderColor: isDark ? '#334155' : '#e2e8f0',
+                                        background: isDark ? (i % 2 === 0 ? '#0f172a' : '#1e293b') : (i % 2 === 0 ? '#fff' : '#f8fafc'),
+                                        transition: 'background 0.15s'
+                                      }}
+                                    >
+                                      <td style={{ padding: '12px 16px', fontWeight: 600, color: isDark ? '#fff' : '#0f172a' }}>#{companyId}</td>
+                                      <td style={{ padding: '12px 16px' }}>
+                                        <span style={{
+                                          padding: '2px 6px', borderRadius: '4px', background: 'rgba(59,130,246,0.1)', color: '#3b82f6', fontWeight: 600
+                                        }}>{getAverageScore(c, /^IL\d/)}</span>
+                                      </td>
+                                      <td style={{ padding: '12px 16px' }}>
+                                        <span style={{
+                                          padding: '2px 6px', borderRadius: '4px', background: 'rgba(16,185,129,0.1)', color: '#10b981', fontWeight: 600
+                                        }}>{getAverageScore(c, /^IS\d/)}</span>
+                                      </td>
+                                      <td style={{ padding: '12px 16px' }}>
+                                        <span style={{
+                                          padding: '2px 6px', borderRadius: '4px', background: 'rgba(245,158,11,0.1)', color: '#f59e0b', fontWeight: 600
+                                        }}>{getAverageScore(c, /^M\d/)}</span>
+                                      </td>
+                                      <td style={{ padding: '12px 16px', fontWeight: 500, color: isDark ? '#e2e8f0' : '#334155' }}>{c.strategie}</td>
+                                      <td style={{ padding: '12px 16px', color: '#8b5cf6', fontWeight: 600 }}>{c.estimations}</td>
+                                      <td style={{ padding: '12px 16px' }}>
+                                        <span style={{
+                                          padding: '2px 6px', borderRadius: '4px',
+                                          background: isDark ? '#334155' : '#e2e8f0',
+                                          color: isDark ? '#f1f5f9' : '#475569',
+                                          fontSize: '11px',
+                                          fontWeight: 600
+                                        }}>C{c.cluster_id}</span>
+                                      </td>
+                                    </tr>
+                                  );
+                                })}
+                                {paginated.length === 0 && (
+                                  <tr>
+                                    <td colSpan="7" style={{ padding: '30px', textAlign: 'center', color: isDark ? '#94a3b8' : '#64748b' }}>
+                                      No companies match the filters.
+                                    </td>
+                                  </tr>
+                                )}
+                              </tbody>
+                            </table>
+                          </div>
+
+                          {/* Pagination controls */}
+                          {totalPages > 1 && (
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', marginTop: '20px' }}>
+                              <button
+                                onClick={() => setCompaniesPage(prev => Math.max(prev - 1, 1))}
+                                disabled={currentPage === 1}
+                                style={{
+                                  padding: '6px 12px',
+                                  background: currentPage === 1 ? 'transparent' : (isDark ? '#1e293b' : '#fff'),
+                                  border: '1px solid',
+                                  borderColor: isDark ? '#334155' : '#cbd5e1',
+                                  borderRadius: '6px',
+                                  color: currentPage === 1 ? (isDark ? '#475569' : '#cbd5e1') : (isDark ? '#fff' : '#0f172a'),
+                                  cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
+                                  fontSize: '13px'
+                                }}
+                              >
+                                Previous
+                              </button>
+                              <span style={{ fontSize: '13px', color: isDark ? '#94a3b8' : '#64748b' }}>
+                                Page {currentPage} of {totalPages}
+                              </span>
+                              <button
+                                onClick={() => setCompaniesPage(prev => Math.min(prev + 1, totalPages))}
+                                disabled={currentPage === totalPages}
+                                style={{
+                                  padding: '6px 12px',
+                                  background: currentPage === totalPages ? 'transparent' : (isDark ? '#1e293b' : '#fff'),
+                                  border: '1px solid',
+                                  borderColor: isDark ? '#334155' : '#cbd5e1',
+                                  borderRadius: '6px',
+                                  color: currentPage === totalPages ? (isDark ? '#475569' : '#cbd5e1') : (isDark ? '#fff' : '#0f172a'),
+                                  cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
+                                  fontSize: '13px'
+                                }}
+                              >
+                                Next
+                              </button>
+                            </div>
+                          )}
+                        </>
+                      );
+                    })()}
+                  </div>
+                )}
               </div>
             )}
- 
+
             {adminPanel === 'stats' && (
               <div>
                 <button onClick={() => setAdminPanel(null)} style={{
@@ -2542,18 +3150,30 @@ ${scoreContext}` : messageText;
                 <h3 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '16px', color: isDark ? '#fff' : '#0f172a' }}>
                   Model Statistics
                 </h3>
+                
+                {statsLoading ? (
+                  <div style={{ textAlign: 'center', padding: '40px', color: isDark ? '#94a3b8' : '#64748b' }}>
+                    <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2" />
+                    Loading statistics...
+                  </div>
+                ) : statsError ? (
+                  <div style={{ padding: '16px', background: 'rgba(239,68,68,0.1)', color: '#ef4444', borderRadius: '8px', fontSize: '13px', marginBottom: '16px' }}>
+                    Failed to load real metrics: {statsError}. Showing defaults instead.
+                  </div>
+                ) : null}
+
                 <div style={{ display: 'grid', gap: '12px' }}>
                   {[
-                    { label: 'Training Samples', value: '156', color: '#3b82f6' },
-                    { label: 'Random Forest Trees', value: '100', color: '#10b981' },
-                    { label: 'CSF Factors', value: '21', color: '#f59e0b' },
-                    { label: 'Strategies', value: '4', color: '#8b5cf6' }
+                    { label: 'Training Samples', value: statsData?.trainingSamples ?? '156', color: '#3b82f6' },
+                    { label: 'Random Forest Trees', value: statsData?.rfTrees ?? '100', color: '#10b981' },
+                    { label: 'CSF Factors', value: statsData?.csfFactors ?? '21', color: '#f59e0b' },
+                    { label: 'Strategies', value: statsData?.strategies ?? '4', color: '#8b5cf6' }
                   ].map(stat => (
                     <div key={stat.label} style={{
                       padding: '16px', background: isDark ? '#1e293b' : '#f8fafc',
                       borderRadius: '10px', border: '1px solid', borderColor: isDark ? '#334155' : '#e2e8f0'
                     }}>
-                     <div style={{ fontSize: '12px', color: isDark ? '#94a3b8' : '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{stat.label}</div>
+                      <div style={{ fontSize: '12px', color: isDark ? '#94a3b8' : '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{stat.label}</div>
                       <div style={{ fontSize: '24px', fontWeight: 700, color: stat.color, marginTop: '4px' }}>{stat.value}</div>
                     </div>
                   ))}

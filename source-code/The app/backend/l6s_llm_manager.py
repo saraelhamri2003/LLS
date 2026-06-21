@@ -4,6 +4,31 @@ import urllib.error
 import urllib.request
 
 
+def is_ollama_running(base_url):
+    try:
+        import urllib.request
+        url = (base_url or "http://127.0.0.1:11434").rstrip("/")
+        with urllib.request.urlopen(f"{url}/api/tags", timeout=1.0) as response:
+            return response.status == 200
+    except Exception:
+        return False
+
+def map_model_name(model_name):
+    name = (model_name or "").lower().strip()
+    if "gemini" in name:
+        if "flash" in name:
+            return "gemini-1.5-flash"
+        return "gemini-1.5-pro"
+    if "gpt" in name or "openai" in name:
+        if "mini" in name or "instant" in name or "nano" in name:
+            return "gpt-4o-mini"
+        return "gpt-4o"
+    if "claude" in name:
+        if "haiku" in name:
+            return "claude-3-haiku-20240307"
+        return "claude-3-5-sonnet-latest"
+    return model_name
+
 class _OllamaHttpClient:
     def __init__(self, model, base_url, temperature):
         self.model = model
@@ -130,6 +155,9 @@ class LLMManager:
 
     def _init_local(self):
         base_url = os.getenv("OLLAMA_BASE_URL", "http://127.0.0.1:11434").rstrip("/")
+        if not is_ollama_running(base_url):
+            return None
+        
         kwargs = {"model": self.local_model, "temperature": self.temperature}
         if base_url:
             kwargs["base_url"] = base_url
@@ -141,7 +169,8 @@ class LLMManager:
             return _OllamaHttpClient(self.local_model, base_url, self.temperature)
 
     def _init_api(self):
-        api_model_lower = (self.api_model or "").lower()
+        mapped_model = map_model_name(self.api_model)
+        api_model_lower = (mapped_model or "").lower()
         api_key = self.api_key
 
         if "gemini" in api_model_lower:
@@ -152,7 +181,7 @@ class LLMManager:
             key = api_key or os.getenv("GOOGLE_API_KEY")
             try:
                 return ChatGoogleGenerativeAI(
-                    model=self.api_model,
+                    model=mapped_model,
                     temperature=self.temperature,
                     google_api_key=key,
                 )
@@ -167,7 +196,7 @@ class LLMManager:
             key = api_key or os.getenv("ANTHROPIC_API_KEY")
             try:
                 return ChatAnthropic(
-                    model=self.api_model,
+                    model=mapped_model,
                     temperature=self.temperature,
                     api_key=key,
                 )
@@ -182,7 +211,7 @@ class LLMManager:
             key = api_key or os.getenv("OPENAI_API_KEY")
             try:
                 return ChatOpenAI(
-                    model=self.api_model,
+                    model=mapped_model,
                     temperature=self.temperature,
                     api_key=key,
                 )
@@ -193,6 +222,14 @@ class LLMManager:
 
     def _fallback_response(self):
         return (
-            "LLM is not configured. Provide CSF values for predictions, or configure "
-            "OLLAMA_BASE_URL or an API key for a supported model."
+            "🤖 **LLM Connection Offline**\n\n"
+            "To enable the AI Chatbot to respond to your queries, please do one of the following:\n\n"
+            "1. **Configure in UI**: Click the **Settings Gear Icon** ⚙️ at the top of the chat screen, toggle **Use API Model**, enter your **Gemini / OpenAI API Key**, and select a model (e.g., Gemini 3 Flash).\n"
+            "2. **Configure via Backend Environment**: Create a `.env` file in `source-code/The app/backend/.env` with your API key:\n"
+            "   ```env\n"
+            "   GOOGLE_API_KEY=your_gemini_key\n"
+            "   ```\n"
+            "   *(or set `OPENAI_API_KEY` for OpenAI, or `ANTHROPIC_API_KEY` for Anthropic)*\n"
+            "3. **Run Ollama Locally**: If you prefer a local model, ensure Ollama is running on your machine (default port 11434) with `llama3:8b` downloaded (`ollama pull llama3:8b`).\n\n"
+            "👉 *Note: You can still run the performance engine and recommendations without an LLM! Just fill out the **Guided Assessment** or parameters on the sidebar and click **Calculate Performance**.*"
         )
